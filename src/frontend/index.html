@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Birthday Planner</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px}
+    input,button{margin:4px}
+    .container{display:flex;gap:40px}
+    .panel{flex:1}
+  </style>
+</head>
+<body>
+  <h1>Birthday Planner</h1>
+  <div id="root">Loading...</div>
+
+  <!-- React (UMD) via CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <script>
+    const e = React.createElement;
+    const apiBase = '/api';
+
+    function useFetch(path, deps=[]) {
+      const [data, setData] = React.useState([]);
+      React.useEffect(()=>{ fetch(apiBase+path).then(r=>r.json()).then(setData).catch(()=>setData([])); }, deps);
+      return [data, setData];
+    }
+
+    function Guests(){
+      const [guests, setGuests] = useFetch('/guests', []);
+      const [name, setName] = React.useState('');
+      async function add(){ if(!name.trim()) return alert('Enter name'); await fetch(apiBase+'/guests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}); setName(''); setGuests(await (await fetch(apiBase+'/guests')).json()); }
+      return e('div',{className:'panel'}, e('h2',null,'Guests'), e('input',{value:name,onChange: (ev)=>setName(ev.target.value), placeholder:'Name'}), e('button',{onClick:add},'Add'), e('ul',null, guests.map(g=>e('li',{key:g.id}, g.name + (g.rsvp?(' ('+g.rsvp+')') : ''))));
+    }
+
+    function Tasks(){
+      const [tasks, setTasks] = useFetch('/tasks', []);
+      const [title, setTitle] = React.useState('');
+      async function add(){ if(!title.trim()) return alert('Enter task'); await fetch(apiBase+'/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,completed:false})}); setTitle(''); setTasks(await (await fetch(apiBase+'/tasks')).json()); }
+      return e('div',{className:'panel'}, e('h2',null,'Tasks'), e('input',{value:title,onChange: (ev)=>setTitle(ev.target.value), placeholder:'Task'}), e('button',{onClick:add},'Add'), e('ul',null, tasks.map(t=>e('li',{key:t.id}, t.title))));
+    }
+
+    function Grammar(){
+      const [text,setText]=React.useState('');
+      const [result,setResult]=React.useState(null);
+      async function check(){ if(!text.trim()) return alert('Enter text'); /* Placeholder: integrate grammar API later */ setResult('Grammar check placeholder — integration pending.'); }
+      return e('div',{className:'panel'}, e('h2',null,'Grammar Check'), e('textarea',{rows:6,cols:40,value:text,onChange:e=>setText(e.target.value)}), e('div',null,e('button',{onClick:check},'Check Grammar')), result && e('pre',null,result));
+    }
+
+    function App(){
+      return e('div',null, e('div',{className:'container'}, e(Guests), e(Tasks), e(Grammar)));
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+  </script>
+</body>
+</html>
